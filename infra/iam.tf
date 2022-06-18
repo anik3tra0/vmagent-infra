@@ -49,3 +49,26 @@ resource "aws_iam_instance_profile" "ec2-trustee-profile" {
   name = "ec2-trustee-profile"
   role = aws_iam_role.ec2-trustee.name
 }
+
+
+resource aws_iam_policy "ec2_read_only_inline_policy" {
+  name        = "ec2-metadata-attr-read-only-policy"
+  description = "Attach this policy to any role that requires underlying resource to access EC2 metadata"
+
+  policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      {
+        Action   = "ec2:Describe*"
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+
+resource "aws_iam_role_policy_attachment" "test-attach" {
+  role       = aws_iam_role.vmagent-sd-role.name
+  policy_arn = aws_iam_policy.ec2_read_only_inline_policy.arn
+}

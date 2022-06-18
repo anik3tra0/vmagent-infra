@@ -1,2 +1,3 @@
-instance_count = 3
+nodes = 3
+vmagent_instances = 1
 

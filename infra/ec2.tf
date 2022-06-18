@@ -1,5 +1,5 @@
 resource "aws_instance" "datanode" {
-  count                  = var.instance_count
+  count                  = var.nodes
   ami                    = "ami-096b9cd38d837f984"
   key_name               = "totem-deployer"
   instance_type          = "t2.micro"
@@ -25,8 +25,9 @@ resource "aws_instance" "datanode" {
 }
 
 resource "aws_instance" "vmagent" {
-  ami                    = "ami-096b9cd38d837f984"
-  key_name               = "totem-deployer"
+  count                  = var.vmagent_instances
+  ami                    = var.ami
+  key_name               = var.keypair
   instance_type          = "t2.micro"
   iam_instance_profile   = aws_iam_instance_profile.ec2-trustee-profile.name
   vpc_security_group_ids = [
@@ -42,12 +43,9 @@ resource "aws_instance" "vmagent" {
 
               docker-compose --version || (sudo curl -L "https://github.com/docker/compose/releases/download/v2.1.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose)
 
-              docker ps || sudo sh -eux
-              apt-get install -y uidmap
+              sudo apt-get install -y uidmap
 
-
-              sudo sh -eux
-              echo "export DOCKER_HOST=unix:///run/user/1000/docker.sock" > /etc/profile.d/docker.sh
+              sudo sh -eux echo <<EOF export DOCKER_HOST=unix:///run/user/1000/docker.sock" > /etc/profile.d/docker.sh EOF
 
               . /etc/profile.d/docker.sh
 
@@ -69,7 +67,7 @@ resource "aws_instance" "vmagent" {
               EOF
 
   tags = {
-    Name        = "vmagent"
+    Name        = "vmagent-${count.index + 1}"
     service     = "vmagent"
     namespace   = "metric-dispatcher"
     environment = "production"
@@ -77,12 +75,13 @@ resource "aws_instance" "vmagent" {
 }
 
 resource "aws_eip" "ip-prod-env" {
-  count    = var.instance_count
+  count    = var.nodes
   instance = aws_instance.datanode[count.index].id
   vpc      = true
 }
 
 resource "aws_eip" "ip-prod-env-vm-agent" {
-  instance = aws_instance.vmagent.id
+  count = var.vmagent_instances
+  instance = aws_instance.vmagent[count.index].id
   vpc      = true
 }
