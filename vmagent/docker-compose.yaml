@@ -1,0 +1,41 @@
+version: "3.5"
+services:
+  vmagent:
+    container_name: vmagent
+    image: victoriametrics/vmagent
+    depends_on:
+      - "victoriametrics"
+    ports:
+      - 8429:8429
+    volumes:
+      - vmagentdata:/vmagentdata
+      - ./vmagent.yaml:/etc/vmagent/vmagent.yaml
+    command:
+      - "--promscrape.config=/etc/vmagent/vmagent.yaml"
+      - "--remoteWrite.label=cluster=${cluster_name}"
+      - "--remoteWrite.label=__replica__=${replica_count}"
+      - "--remoteWrite.label=__tenant__=${last9_tenant}"
+      - "--remoteWrite.url=http://victoriametrics:8428/api/v1/write"
+      - "--remoteWrite.url=https://metrics.last9.io/metrics/${last9_token}/sender/${last9_tenant}/write"
+    networks:
+      - vm_net
+    restart: always
+  victoriametrics:
+    container_name: victoriametrics
+    image: victoriametrics/victoria-metrics:latest
+    ports:
+      - 8428:8428
+    volumes:
+      - vmdata:/storage
+    command:
+      - "--storageDataPath=/storage"
+      - "--httpListenAddr=:8428"
+      - "--retentionPeriod=1d"
+    networks:
+      - vm_net
+    restart: always
+volumes:
+  vmagentdata: { }
+  vmdata: { }
+networks:
+  vm_net:
