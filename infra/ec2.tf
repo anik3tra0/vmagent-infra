@@ -1,8 +1,8 @@
 resource "aws_instance" "datanode" {
   count                  = var.nodes
-  ami                    = "ami-096b9cd38d837f984"
-  key_name               = "totem-deployer"
-  instance_type          = "t2.micro"
+  ami                    = var.ami
+  key_name               = var.keypair
+  instance_type          = var.flavour
   vpc_security_group_ids = [
     aws_security_group.ingress-datanode.id]
   subnet_id              = aws_subnet.subnet-uno.id
@@ -28,7 +28,7 @@ resource "aws_instance" "vmagent" {
   count                  = var.vmagent_instances
   ami                    = var.ami
   key_name               = var.keypair
-  instance_type          = "t2.micro"
+  instance_type          = var.flavour
   iam_instance_profile   = aws_iam_instance_profile.ec2-trustee-profile.name
   vpc_security_group_ids = [
     aws_security_group.ingress-vmagent.id]

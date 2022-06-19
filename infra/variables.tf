@@ -23,6 +23,10 @@ variable "vmagent_instances" {
   default = 1
 }
 
+variable "flavour" {
+  default = "t2.micro"
+}
+
 
 output "datanode-instance_ips" {
   value = aws_instance.datanode.*.public_ip
